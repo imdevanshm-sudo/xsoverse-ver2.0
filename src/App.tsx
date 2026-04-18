@@ -16,7 +16,7 @@ function NavItem({ icon: Icon, active, onClick }: { icon: any, active: boolean, 
       }`}>
         <Icon
           className={`w-[24px] h-[24px] transition-all duration-200 ${
-            active ? 'text-[#FF4E00] drop-shadow-[0_0_8px_rgba(255,78,0,0.8)]' : 'text-white/30 group-hover:text-white/50'
+            active ? 'text-[#34d399] drop-shadow-[0_0_8px_rgba(52,211,153,0.8)]' : 'text-white/30 group-hover:text-white/50'
           }`}
           strokeWidth={active ? 2.5 : 2}
         />
@@ -53,15 +53,15 @@ function HomeView() {
                            border border-white/5 shadow-[inset_0_2px_4px_rgba(255,255,255,0.1),0_8px_0_#0a0a0e]
                            active:shadow-[inset_0_2px_4px_rgba(255,255,255,0.1),0_0px_0_#0a0a0e] active:translate-y-[8px]
                            transition-all duration-75 relative z-10 outline-none">
-          <Play className="w-8 h-8 text-[#FF4F02] translate-x-[3px] drop-shadow-[0_0_10px_#FF4F02]" fill="currentColor" strokeWidth={1} />
+          <Play className="w-8 h-8 text-[#a855f7] translate-x-[3px] drop-shadow-[0_0_10px_rgba(168,85,247,0.8)]" fill="currentColor" strokeWidth={1} />
         </button>
         <span className="font-pixel text-[20px] text-white/30 uppercase z-10 tracking-widest">Preview Render</span>
       </div>
 
       <button 
-        className="w-full bg-gradient-to-r from-[#FF4F02] to-[#d63100] text-[#0f0502] font-pixel text-2xl py-4 rounded-2xl tracking-widest 
-                   border-2 border-[#7c1a00] shadow-[0_8px_0_#7c1a00]
-                   active:shadow-[0_0px_0_#7c1a00] active:translate-y-[8px]
+        className="w-full bg-gradient-to-r from-[#a855f7] to-[#7e22ce] text-[#0f0502] font-pixel text-2xl py-4 rounded-2xl tracking-widest 
+                   border-2 border-[#581c87] shadow-[0_8px_0_#581c87]
+                   active:shadow-[0_0px_0_#581c87] active:translate-y-[8px]
                    transition-all duration-75 outline-none"
       >
         CRAFT AN EXSO - $4.99
@@ -122,20 +122,20 @@ function AuraView({ activeAura, setActiveAura, activeColor }: { activeAura: numb
       const gravityLevel = col + row; // 0 to 4 diagonal spectrum
       
       switch (gravityLevel) {
-        case 0: // [0,0] Top-Left: Zero Gravity
-          navigator.vibrate(10);
+        case 0: // [0,0] Top-Left: Zero Gravity (Fast flutter)
+          navigator.vibrate([10, 50, 10]);
           break;
-        case 1: // [1,0], [0,1]
-          navigator.vibrate([15, 20, 10]);
+        case 1: // Shallow
+          navigator.vibrate([25, 85, 25]);
           break;
-        case 2: // [1,1] Center diagonal: Moderate Resistance
-          navigator.vibrate([25, 30, 25]);
+        case 2: // Center: Calm, resting human heartbeat
+          navigator.vibrate([60, 120, 60]);
           break;
-        case 3: // [2,1], [1,2]
-          navigator.vibrate([80, 40, 80]);
+        case 3: // Densifying
+          navigator.vibrate([140, 150, 140]);
           break;
-        case 4: // [2,2] Bottom-Right: Maximum Gravity
-          navigator.vibrate(450);
+        case 4: // Bottom-Right: Massive giant's heartbeat
+          navigator.vibrate([250, 180, 250]);
           break;
       }
     }
@@ -160,22 +160,24 @@ function AuraView({ activeAura, setActiveAura, activeColor }: { activeAura: numb
             animate={{ y: [0, -4, 0], opacity: [0.7, 1, 0.7] }}
             transition={{ repeat: Infinity, duration: 4, ease: "easeInOut" }}
             className="absolute -top-10 md:-top-14 left-1/2 -translate-x-1/2 flex flex-col items-center"
+            style={{ willChange: 'transform, opacity' }}
           >
             <Feather 
               className="w-6 h-6 md:w-8 md:h-8 transition-colors duration-700" 
-              style={{ color: activeColor, filter: `drop-shadow(0 0 10px ${activeColor}) drop-shadow(0 0 20px ${activeColor})` }} 
+              style={{ color: '#ffffff', filter: `drop-shadow(0 0 15px rgba(255,255,255,0.8))` }} 
             />
           </motion.div>
           
           {/* Y-Axis Bottom (Weight / Heavy) */}
           <motion.div 
-            animate={{ scale: [1, 1.08, 1], filter: ['brightness(1)', 'brightness(1.3)', 'brightness(1)'] }}
+            animate={{ scale: [1, 1.08, 1], opacity: [0.7, 1, 0.7] }}
             transition={{ repeat: Infinity, duration: 3, ease: "easeInOut" }}
             className="absolute -bottom-10 md:-bottom-14 left-1/2 -translate-x-1/2 flex flex-col items-center"
+            style={{ willChange: 'transform, opacity' }}
           >
             <Anchor 
               className="w-5 h-5 md:w-7 md:h-7 transition-colors duration-700" 
-              style={{ color: activeColor, filter: `drop-shadow(0 0 10px ${activeColor}) drop-shadow(0 0 20px ${activeColor})` }} 
+              style={{ color: '#ffffff', filter: `drop-shadow(0 0 15px rgba(255,255,255,0.8))` }} 
               strokeWidth={3}
             />
           </motion.div>
@@ -185,10 +187,11 @@ function AuraView({ activeAura, setActiveAura, activeColor }: { activeAura: numb
             animate={{ rotate: [-8, 8, -8], x: [0, -3, 0] }}
             transition={{ repeat: Infinity, duration: 5, ease: "easeInOut" }}
             className="absolute top-1/2 -left-10 md:-left-14 -translate-y-1/2 flex items-center justify-center"
+            style={{ willChange: 'transform' }}
           >
             <Wind 
               className="w-5 h-5 md:w-7 md:h-7 transition-colors duration-700" 
-              style={{ color: activeColor, filter: `drop-shadow(0 0 10px ${activeColor}) drop-shadow(0 0 20px ${activeColor})` }} 
+              style={{ color: '#ffffff', filter: `drop-shadow(0 0 15px rgba(255,255,255,0.8))` }} 
             />
           </motion.div>
 
@@ -197,10 +200,11 @@ function AuraView({ activeAura, setActiveAura, activeColor }: { activeAura: numb
             animate={{ opacity: [0.5, 1, 0.5], scale: [0.95, 1.05, 0.95] }}
             transition={{ repeat: Infinity, duration: 2, ease: "circInOut" }}
             className="absolute top-1/2 -right-10 md:-right-14 -translate-y-1/2 flex items-center justify-center"
+            style={{ willChange: 'transform, opacity' }}
           >
             <Minus 
               className="w-6 h-6 md:w-8 md:h-8 transition-colors duration-700 rotate-90" 
-              style={{ color: activeColor, filter: `drop-shadow(0 0 10px ${activeColor}) drop-shadow(0 0 20px ${activeColor})` }} 
+              style={{ color: '#ffffff', filter: `drop-shadow(0 0 15px rgba(255,255,255,0.8))` }} 
               strokeWidth={3}
             />
           </motion.div>
@@ -301,7 +305,7 @@ function AuraView({ activeAura, setActiveAura, activeColor }: { activeAura: numb
                           animate={{ scale: [1, 1.3, 1], opacity: [0.9, 1, 0.9] }}
                           transition={{ repeat: Infinity, duration: 2, ease: 'easeInOut' }}
                           className="absolute w-[200%] h-[200%] rounded-full blur-[35px] mix-blend-screen scale-150"
-                          style={{ backgroundColor: activeColor }}
+                          style={{ backgroundColor: activeColor, willChange: 'transform, opacity' }}
                         />
                         <motion.div 
                           className="w-4 h-4 bg-white rounded-full relative z-20"
@@ -330,16 +334,22 @@ function AuraView({ activeAura, setActiveAura, activeColor }: { activeAura: numb
 }
 
 const auraThemeColors = [
-  '#fde047', '#22d3ee', '#818cf8',
-  '#f472b6', '#FF4E00', '#d946ef',
-  '#34d399', '#3b82f6', '#bd2ce8' 
+  '#34d399', // 0: 0,0 (Mint)
+  '#2dd4bf', // 1: 1,0 (Teal)
+  '#38bdf8', // 2: 2,0 (Light Blue)
+  '#2dd4bf', // 3: 0,1 (Teal)
+  '#818cf8', // 4: 1,1 (Indigo/Center)
+  '#a855f7', // 5: 2,1 (Purple)
+  '#38bdf8', // 6: 0,2 (Light Blue)
+  '#a855f7', // 7: 1,2 (Purple)
+  '#7e22ce', // 8: 2,2 (Deep Purple)
 ];
 
 export default function App() {
   const [tab, setTab] = useState<'home' | 'upload' | 'aura'>('aura');
-  const [activeAura, setActiveAura] = useState(4); // Center cell (1,1)
+  const [activeAura, setActiveAura] = useState(8); // Bottom-Right max gravity
 
-  const activeColor = tab === 'aura' ? auraThemeColors[activeAura] : '#FF4E00';
+  const activeColor = tab === 'aura' ? auraThemeColors[activeAura] : '#818cf8';
 
   return (
     <div className="flex bg-[#020202] min-h-screen items-center justify-center selection:bg-[#FF4E00]/30 selection:text-white">
@@ -355,11 +365,13 @@ export default function App() {
 
           {/* Bioluminescent Dust Particles Layer */}
           <motion.div 
-            className="absolute inset-0 opacity-40 pointer-events-none z-0 mix-blend-screen"
-            animate={{ backgroundPosition: ['0px 0px', '200px 200px'] }}
+            className="absolute opacity-40 pointer-events-none z-0 mix-blend-screen"
+            animate={{ x: [0, -200], y: [0, -200] }}
             transition={{ repeat: Infinity, duration: 30, ease: 'linear' }}
             style={{ 
-              backgroundImage: `radial-gradient(1.5px 1.5px at 40px 60px, rgba(200, 200, 255, 0.8), rgba(0,0,0,0)), radial-gradient(2px 2px at 150px 20px, rgba(255, 255, 255, 0.6), rgba(0,0,0,0)), radial-gradient(1px 1px at 220px 180px, rgba(160, 120, 255, 0.9), rgba(0,0,0,0)), radial-gradient(2px 2px at 80px 230px, rgba(220, 220, 255, 0.7), rgba(0,0,0,0)), radial-gradient(1.5px 1.5px at 300px 110px, rgba(200, 150, 255, 0.8), rgba(0,0,0,0))`,
+              width: '200%', height: '200%', top: '-50%', left: '-50%',
+              willChange: 'transform',
+              backgroundImage: `radial-gradient(1.5px 1.5px at 40px 60px, rgba(52, 211, 153, 0.8), rgba(0,0,0,0)), radial-gradient(2px 2px at 150px 20px, rgba(168, 85, 247, 0.6), rgba(0,0,0,0)), radial-gradient(1px 1px at 220px 180px, rgba(126, 34, 206, 0.9), rgba(0,0,0,0)), radial-gradient(2px 2px at 80px 230px, rgba(52, 211, 153, 0.7), rgba(0,0,0,0)), radial-gradient(1.5px 1.5px at 300px 110px, rgba(168, 85, 247, 0.8), rgba(0,0,0,0))`,
               backgroundSize: '400px 400px'
             }}
           />
