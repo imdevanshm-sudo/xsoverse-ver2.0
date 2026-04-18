@@ -122,20 +122,25 @@ function AuraView({ activeAura, setActiveAura, activeColor }: { activeAura: numb
       const gravityLevel = col + row; // 0 to 4 diagonal spectrum
       
       switch (gravityLevel) {
-        case 0: // [0,0] Top-Left: Zero Gravity (Fast flutter)
-          navigator.vibrate([10, 50, 10]);
+        case 0: // [0,0] Top-Left: Zero Gravity (Crisp Tick)
+          // Just a single, tiny point of contact
+          navigator.vibrate(10);
           break;
-        case 1: // Shallow
-          navigator.vibrate([25, 85, 25]);
+        case 1: // Shallow (Soft click)
+          // Introducing the second impact, keeping both light
+          navigator.vibrate([15, 20, 20]);
           break;
-        case 2: // Center: Calm, resting human heartbeat
-          navigator.vibrate([60, 120, 60]);
+        case 2: // Center: Balanced (Mechanical Knock)
+          // Noticeable wind-up, distinct pause, solid connection
+          navigator.vibrate([25, 30, 45]);
           break;
-        case 3: // Densifying
-          navigator.vibrate([140, 150, 140]);
+        case 3: // Densifying (Heavy physical register)
+          // Heavier wind-up, leading to a much thicker sustained thud
+          navigator.vibrate([32, 30, 70]);
           break;
-        case 4: // Bottom-Right: Massive giant's heartbeat
-          navigator.vibrate([250, 180, 250]);
+        case 4: // Bottom-Right: Maximum Gravity (Deep Thud / Ka-thunk)
+          // Maximum pre-fire jolt, hollow metal pause, massive physical impact
+          navigator.vibrate([40, 30, 100]);
           break;
       }
     }
