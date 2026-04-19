@@ -327,12 +327,12 @@ function AuraView({ activeAura, setActiveAura, activeColor }: { activeAura: numb
      </div>
 
       <button 
-        className="w-full shrink-0 bg-[#34d399] text-[#0A2619] font-pixel text-2xl py-5 rounded-2xl tracking-widest mt-6
+        className="w-full shrink-0 bg-[#34d399] text-[#0A2619] font-pixel text-2xl py-5 rounded-full tracking-widest mt-6
                    border-2 border-[#095033] shadow-[inset_0_2px_4px_rgba(255,255,255,0.4),inset_0_-4px_8px_rgba(0,0,0,0.2),0_10px_20px_rgba(0,0,0,0.5),0_6px_0_#095033]
                    active:shadow-[inset_0_2px_4px_rgba(255,255,255,0.4),inset_0_-4px_8px_rgba(0,0,0,0.2),0_4px_10px_rgba(0,0,0,0.5),0_0px_0_#095033] active:translate-y-[6px]
                    transition-all duration-75 outline-none flex items-center justify-center gap-3 relative overflow-hidden z-20"
       >
-        <span className="relative z-10 flex items-center justify-center gap-3 font-bold"><Check className="w-[20px] h-[20px]" strokeWidth={4} /> CONFIRM - $4.99</span>
+        <span className="relative z-10 flex items-center justify-center gap-3 font-bold"><Check className="w-[20px] h-[20px]" strokeWidth={4} /> CONFIRM ($15.00)</span>
       </button>
     </motion.div>
   );
