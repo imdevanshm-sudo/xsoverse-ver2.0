@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence, LayoutGroup } from 'motion/react';
 import { Home, Upload, Grid3X3, Play, Camera, Mic, Check, Feather, Anchor, Wind, Minus } from 'lucide-react';
+import LoadCartridge from './components/LoadCartridge';
 
 const screenVariants = {
   initial: { opacity: 0, y: 15, scale: 0.98 },
@@ -70,50 +71,7 @@ function HomeView() {
   );
 }
 
-function UploadView() {
-  return (
-    <motion.div
-      variants={screenVariants}
-      initial="initial"
-      animate="animate"
-      exit="exit"
-      className="flex flex-col h-full px-8 pt-16 pb-28 relative z-10"
-    >
-      <h1 className="text-white/90 text-5xl font-pixel leading-[1.1] mb-auto drop-shadow-[0_4px_4px_rgba(0,0,0,0.5)]">
-        Load<br/>Cartridge
-      </h1>
 
-      <div className="flex flex-col items-center justify-center gap-10 relative flex-1 mb-8">
-        {/* Connecting Line */}
-        <div className="absolute top-1/2 left-1/2 w-[4px] h-[60%] bg-[#1a1a24] border-x border-white/5 shadow-[inset_0_0_10px_rgba(0,0,0,0.5)] -translate-x-1/2 -translate-y-1/2 z-0" />
-
-        <button 
-          className="w-32 h-32 rounded-[28px] bg-[#1a1a24] flex flex-col items-center justify-center gap-4 relative z-10 
-                     border border-white/10 shadow-[inset_0_2px_4px_rgba(255,255,255,0.05),0_8px_0_#0a0a0f] 
-                     active:shadow-[inset_0_2px_4px_rgba(255,255,255,0.05),0_0px_0_#0a0a0f] active:translate-y-[8px]
-                     transition-all duration-75 outline-none group"
-        >
-          <div className="w-12 h-12 rounded-full bg-[#0a0a0f] flex items-center justify-center shadow-[inset_0_4px_8px_rgba(0,0,0,0.8)] border-b border-white/5">
-             <Camera className="w-[20px] h-[20px] text-[#34d399] drop-shadow-[0_0_8px_rgba(52,211,153,0.6)]" />
-          </div>
-          <span className="font-pixel text-[18px] text-white/40 uppercase group-hover:text-white/70 transition-colors">Visuals</span>
-        </button>
-
-        <button 
-          className="w-32 h-32 rounded-[28px] bg-[#1a1a24] flex flex-col items-center justify-center gap-4 relative z-10 
-                     border border-white/10 shadow-[inset_0_2px_4px_rgba(255,255,255,0.05),0_8px_0_#0a0a0f] 
-                     active:shadow-[inset_0_2px_4px_rgba(255,255,255,0.05),0_0px_0_#0a0a0f] active:translate-y-[8px]
-                     transition-all duration-75 outline-none group"
-        >
-          <div className="w-12 h-12 rounded-full bg-[#0a0a0f] flex items-center justify-center shadow-[inset_0_4px_8px_rgba(0,0,0,0.8)] border-b border-white/5">
-             <Mic className="w-[20px] h-[20px] text-[#d946ef] drop-shadow-[0_0_8px_rgba(217,70,239,0.6)]" />
-          </div>
-          <span className="font-pixel text-[18px] text-white/40 uppercase group-hover:text-white/70 transition-colors">Audio</span>
-        </button>
-      </div>
-    </motion.div>
-  );
-}
 
 function AuraView({ activeAura, setActiveAura, activeColor }: { activeAura: number, setActiveAura: (i: number) => void, activeColor: string }) {
   const triggerHaptics = (col: number, row: number) => {
@@ -424,7 +382,7 @@ export default function App() {
         <div className="relative z-10 w-full h-[100dvh] flex flex-col mx-auto max-w-2xl" style={{ willChange: 'transform, opacity' }}>
           <AnimatePresence mode="wait">
             {tab === 'home' && <HomeView key="home" />}
-            {tab === 'upload' && <UploadView key="upload" />}
+            {tab === 'upload' && <LoadCartridge key="upload" />}
             {tab === 'aura' && <AuraView key="aura" activeAura={activeAura} setActiveAura={setActiveAura} activeColor={activeColor} />}
           </AnimatePresence>
         </div>
