@@ -21,8 +21,8 @@ export default function LoadCartridge() {
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({ 
     onDrop,
-    accept: { 'image/*': [], 'video/*': [] }
-  });
+    accept: { 'image/*': ['.jpeg', '.jpg', '.png'], 'video/*': ['.mp4', '.avi', '.mov'] }
+  } as any);
 
   return (
     <motion.div
@@ -32,13 +32,13 @@ export default function LoadCartridge() {
       exit="exit"
       className="flex flex-col h-full px-8 pt-16 pb-28 relative z-10 w-full"
     >
-      <h1 className="text-white/90 text-5xl font-pixel leading-[1.1] mb-auto drop-shadow-[0_4px_4px_rgba(0,0,0,0.5)]">
+      <h1 className="text-white/90 text-3xl font-serif tracking-widest uppercase leading-[1.1] mb-auto drop-shadow-[0_2px_10px_rgba(255,255,255,0.2)]">
         Load<br/>Cartridge
       </h1>
 
       <div className="flex flex-col items-center justify-center gap-10 relative flex-1 mb-8">
-        {/* Connecting Line */}
-        <div className="absolute top-1/2 left-1/2 w-[4px] h-[75%] bg-[#1a1a24] border-x border-white/5 shadow-[inset_0_0_10px_rgba(0,0,0,0.5)] -translate-x-1/2 -translate-y-1/2 z-0" />
+        {/* Luminescent Light Stream Connecting Nodes */}
+        <div className="absolute top-1/2 left-1/2 w-[2px] h-[75%] bg-white/20 shadow-[0_0_10px_rgba(255,255,255,0.4)] blur-[1px] -translate-x-1/2 -translate-y-1/2 z-0" />
 
         {/* VISUALS NODE */}
         <div className="relative z-10 w-full flex justify-center">
@@ -49,11 +49,11 @@ export default function LoadCartridge() {
             }}
             {...(expandedNode === 'visuals' ? getRootProps() : {})}
             className={`
-              rounded-[28px] bg-white/5 backdrop-blur-md flex flex-col items-center justify-center gap-4 cursor-pointer
-              border border-white/10 shadow-[inset_0_2px_4px_rgba(255,255,255,0.05),0_8px_0_#0a0a0f]
+              rounded-[28px] bg-white/[0.05] backdrop-blur-3xl flex flex-col items-center justify-center gap-4 cursor-pointer
+              border border-white/20 shadow-[inset_0_2px_10px_rgba(255,255,255,0.1),0_10px_20px_rgba(0,0,0,0.5)]
               transition-all duration-300 outline-none group overflow-hidden
-              ${expandedNode === 'visuals' ? 'w-full h-48 active:shadow-[inset_0_2px_4px_rgba(255,255,255,0.05),0_8px_0_#0a0a0f]' : 'w-32 h-32 hover:bg-white/10 active:shadow-[inset_0_2px_4px_rgba(255,255,255,0.05),0_0px_0_#0a0a0f] active:translate-y-[8px]'}
-              ${isDragActive ? 'border-[#34d399]/50 bg-[#34d399]/10' : ''}
+              ${expandedNode === 'visuals' ? 'w-full h-48 active:scale-[0.99] border-dashed border-[#34d399]/40 bg-white/5' : 'w-32 h-32 hover:bg-white/10 active:scale-95'}
+              ${isDragActive ? 'border-[#34d399] bg-[#34d399]/10 shadow-[0_0_30px_rgba(52,211,153,0.3)]' : ''}
             `}
           >
             {expandedNode === 'visuals' && <input {...getInputProps()} />}
@@ -74,7 +74,7 @@ export default function LoadCartridge() {
                       <Camera className="w-[20px] h-[20px] text-[#34d399] drop-shadow-[0_0_8px_rgba(52,211,153,0.6)]" />
                     )}
                   </div>
-                  <span className="font-pixel text-[18px] text-white/40 uppercase group-hover:text-white/70 transition-colors">
+                  <span className="font-serif tracking-[0.2em] text-[15px] text-white/40 uppercase group-hover:text-white/70 transition-colors">
                     {visualFiles.length > 0 ? 'Loaded' : 'Visuals'}
                   </span>
                 </motion.div>
@@ -87,7 +87,7 @@ export default function LoadCartridge() {
                   className="flex flex-col items-center text-center px-4 w-full h-full justify-center"
                 >
                   <ImageIcon className={`w-8 h-8 mb-3 ${isDragActive ? 'text-[#34d399]' : 'text-white/30'} transition-colors`} />
-                  <span className="font-pixel text-lg text-white/70 uppercase">
+                  <span className="font-serif tracking-[0.2em] text-[15px] text-white/70 uppercase">
                     {isDragActive ? 'Drop It Here' : 'Drop Matter'}
                   </span>
                   <span className="text-white/30 text-sm mt-1 uppercase tracking-widest">(Video or Photo)</span>
@@ -100,7 +100,7 @@ export default function LoadCartridge() {
                       setExpandedNode(null);
                     }}
                   >
-                    <span className="text-white/50 text-xs font-pixel">X</span>
+                    <span className="text-white/50 text-xs font-serif">X</span>
                   </div>
                 </motion.div>
               )}
@@ -116,10 +116,10 @@ export default function LoadCartridge() {
               if (expandedNode !== 'audio') setExpandedNode('audio');
             }}
             className={`
-              rounded-[28px] bg-white/5 backdrop-blur-md flex flex-col items-center justify-center gap-4 cursor-pointer
-              border border-white/10 shadow-[inset_0_2px_4px_rgba(255,255,255,0.05),0_8px_0_#0a0a0f]
+              rounded-[28px] bg-white/[0.05] backdrop-blur-3xl flex flex-col items-center justify-center gap-4 cursor-pointer
+              border border-white/20 shadow-[inset_0_2px_10px_rgba(255,255,255,0.1),0_10px_20px_rgba(0,0,0,0.5)]
               transition-all duration-300 outline-none group overflow-hidden
-              ${expandedNode === 'audio' ? 'w-full h-48 px-6 active:shadow-[inset_0_2px_4px_rgba(255,255,255,0.05),0_8px_0_#0a0a0f] cursor-default' : 'w-32 h-32 hover:bg-white/10 active:shadow-[inset_0_2px_4px_rgba(255,255,255,0.05),0_0px_0_#0a0a0f] active:translate-y-[8px]'}
+              ${expandedNode === 'audio' ? 'w-full h-48 px-6 active:scale-[0.99] cursor-default' : 'w-32 h-32 hover:bg-white/10 active:scale-95'}
             `}
           >
             <AnimatePresence mode="wait">
@@ -138,7 +138,7 @@ export default function LoadCartridge() {
                       <Mic className="w-[20px] h-[20px] text-[#a855f7] drop-shadow-[0_0_8px_rgba(168,85,247,0.6)]" />
                     )}
                   </div>
-                  <span className="font-pixel text-[18px] text-white/40 uppercase group-hover:text-white/70 transition-colors">
+                  <span className="font-serif tracking-[0.2em] text-[15px] text-white/40 uppercase group-hover:text-white/70 transition-colors">
                     {audioUrl ? 'Loaded' : 'Audio'}
                   </span>
                 </motion.div>
@@ -158,7 +158,7 @@ export default function LoadCartridge() {
                       setExpandedNode(null);
                     }}
                   >
-                    <span className="text-white/50 text-xs font-pixel">X</span>
+                    <span className="text-white/50 text-xs font-serif">X</span>
                   </div>
 
                   <input 
@@ -166,14 +166,14 @@ export default function LoadCartridge() {
                     placeholder="Link Spotify/Apple URL"
                     value={audioUrl}
                     onChange={(e) => setAudioUrl(e.target.value)}
-                    className="w-full bg-[#0a0a0f]/80 text-white placeholder-white/30 rounded-xl px-4 py-3 outline-none border border-white/10 focus:border-[#a855f7]/50 font-pixel text-sm tracking-wide z-10"
+                    className="w-full bg-[#0a0a0f]/80 text-white placeholder-white/30 rounded-xl px-4 py-3 outline-none border border-white/10 focus:border-[#a855f7]/50 font-serif text-sm tracking-wide z-10"
                   />
                   <div className="flex items-center gap-2 w-full">
                     <div className="h-[1px] flex-1 bg-white/10" />
-                    <span className="text-[10px] text-white/30 uppercase tracking-widest font-pixel">OR</span>
+                    <span className="text-[10px] text-white/30 uppercase tracking-widest font-serif">OR</span>
                     <div className="h-[1px] flex-1 bg-white/10" />
                   </div>
-                  <button className="w-full bg-white/5 hover:bg-white/10 border border-white/10 text-white/70 font-pixel text-xs py-3 rounded-xl uppercase tracking-widest transition-colors z-10">
+                  <button className="w-full bg-white/5 hover:bg-white/10 border border-white/10 text-white/70 font-serif text-xs py-3 rounded-xl uppercase tracking-[0.2em] transition-colors z-10">
                     Upload Voice Note (.mp3)
                   </button>
                 </motion.div>
