@@ -1,5 +1,5 @@
 import React, { useState, memo, useCallback, useEffect, useRef } from 'react';
-import { motion, AnimatePresence, useMotionValue, useAnimation, useTransform, animate } from 'framer-motion';
+import { motion, AnimatePresence, useMotionValue, useAnimation, useTransform, animate } from 'motion/react';
 import { Play, Feather, ArrowRight, Loader2, Camera, Mic, BookOpen, Lock, X, Check } from 'lucide-react';
 import { useDropzone, DropzoneOptions } from 'react-dropzone';
 
@@ -7,22 +7,6 @@ const screenVariants = {
   initial: { opacity: 0, y: 15, scale: 0.98 },
   animate: { opacity: 1, y: 0, scale: 1, transition: { type: "spring", stiffness: 450, damping: 30, mass: 1 } },
   exit: { opacity: 0, scale: 0.98, transition: { duration: 0.1, ease: 'easeOut' } }
-};
-
-
-const fadeAudio = (audio: HTMLAudioElement, targetVolume: number, duration: number) => {
-  const startVolume = audio.volume;
-  const startTime = Date.now();
-  const step = () => {
-    const elapsed = Date.now() - startTime;
-    if (elapsed >= duration) {
-      audio.volume = targetVolume;
-      return;
-    }
-    audio.volume = startVolume + (targetVolume - startVolume) * (elapsed / duration);
-    requestAnimationFrame(step);
-  };
-  requestAnimationFrame(step);
 };
 
 const triggerHaptics = (col: number, row: number) => {
@@ -76,39 +60,11 @@ const PEARL_STYLES = `
     30% { transform: scale(1); filter: saturate(1.5) brightness(1.2); }
     100% { transform: scale(1); filter: saturate(1.5) brightness(1.2); }
   }
-  @keyframes pearl-float {
-    0%   { transform: translateY(0px) rotate(-1deg); }
-    25%  { transform: translateY(-8px) rotate(0.5deg); }
-    50%  { transform: translateY(-14px) rotate(1deg); }
-    75%  { transform: translateY(-8px) rotate(-0.5deg); }
-    100% { transform: translateY(0px) rotate(-1deg); }
-  }
-  @keyframes pearl-drag-trail {
-    0%   { opacity: 0.5; transform: scale(1.1); }
-    100% { opacity: 0; transform: scale(1.8); }
-  }
-  @keyframes target-pulse {
-    0%   { box-shadow: 0 0 0 0 rgba(0,240,255,0.6); }
-    70%  { box-shadow: 0 0 0 18px rgba(0,240,255,0); }
-    100% { box-shadow: 0 0 0 0 rgba(0,240,255,0); }
-  }
   .living-pearl-idle {
-    animation: pearl-breathe 6s infinite ease-in-out, pearl-float 4s ease-in-out infinite;
+    animation: pearl-breathe 6s infinite ease-in-out;
   }
   .living-pearl-recording {
-    /* Handled dynamically by Web Audio API */
-    filter: saturate(1.5) brightness(1.2);
-    transition: filter 0.3s ease;
-  }
-  .pearl-drag-trail {
-    position: absolute;
-    inset: 0;
-    border-radius: 9999px;
-    pointer-events: none;
-    animation: pearl-drag-trail 0.6s ease-out infinite;
-  }
-  .target-zone-magnetic {
-    animation: target-pulse 1s ease-out infinite;
+    animation: pearl-heartbeat 1s infinite ease-in-out;
   }
 `;
 
@@ -181,17 +137,11 @@ export default function App() {
   const [flickDir, setFlickDir] = useState(1);
   const [isInventoryOpen, setIsInventoryOpen] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
-  const [isDragNearTarget, setIsDragNearTarget] = useState(false);
   const hasMatter = primaryMedia.length > 0 || pearlState === 'INFUSED';
   
   const x = useMotionValue(0);
   const y = useMotionValue(0);
   const pearlControls = useAnimation();
-  const pearlRotate = useTransform(x, [-220, 0, 220], [-10, 0, 10]);
-  const pearlScale = useTransform([x, y] as const, ([latestX, latestY]: [number, number]) => {
-    const dist = Math.min(260, Math.hypot(latestX, latestY));
-    return 1 + dist / 2600;
-  });
   
   const accumulatedTimeRef = useRef(0);
   const startTimeRef = useRef(0);
@@ -201,14 +151,6 @@ export default function App() {
   const originRef = useRef<HTMLDivElement>(null);
   const auraRef = useRef<HTMLDivElement>(null);
   const messageRef = useRef<HTMLDivElement>(null);
-
-  const ambientAudioRef = useRef<HTMLAudioElement | null>(null);
-  const audioContextRef = useRef<AudioContext | null>(null);
-  const analyserRef = useRef<AnalyserNode | null>(null);
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const audioChunksRef = useRef<BlobPart[]>([]);
-  const animationFrameRef = useRef<number | null>(null);
-  const micLevel = useMotionValue(1);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -235,14 +177,6 @@ export default function App() {
     } as unknown as DropzoneOptions
   );
 
-  const { getRootProps: inventoryAddProps, getInputProps: inventoryAddInputProps } = useDropzone(
-    {
-      onDrop: (files: any) => setPrimaryMedia(prev => [...prev, ...files]),
-      accept: { 'image/*': [], 'video/*': [] },
-      noClick: false
-    } as unknown as DropzoneOptions
-  );
-
   const { getRootProps: linerProps, getInputProps: linerInputProps } = useDropzone(
     {
       onDrop: (files: any) => setLinerMedia(files),
@@ -266,94 +200,30 @@ export default function App() {
     setPearlKey(prev => prev + 1);
   }, []);
 
-  const startRecording = useCallback(async () => {
+  const startRecording = useCallback((e: React.PointerEvent) => {
     if (pearlState !== 'IDLE') return;
     
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } });
+    if (window.navigator && window.navigator.vibrate) navigator.vibrate([20, 30, 20]);
+    
+    setPearlState('RECORDING');
+    startTimeRef.current = Date.now();
+    
+    recordIntervalRef.current = setInterval(() => {
+      const now = Date.now();
+      const sessionTime = now - startTimeRef.current;
+      const totalTime = accumulatedTimeRef.current + sessionTime;
+      setRecordedTime(Math.floor(totalTime / 1000));
       
-      if (window.navigator?.vibrate) navigator.vibrate([20, 30, 20]);
-      setPearlState('RECORDING');
-      startTimeRef.current = Date.now();
-
-      // Duck ambient music
-      if (ambientAudioRef.current) {
-        fadeAudio(ambientAudioRef.current, 0.3, 500); // Reduce to 30% smoothly
+      if (totalTime >= 1000) {
+        setHasRecordedOnce(true);
       }
-
-      const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
-      const analyser = audioCtx.createAnalyser();
-      analyser.fftSize = 256;
-      analyser.smoothingTimeConstant = 0.8;
-      
-      const source = audioCtx.createMediaStreamSource(stream);
-      source.connect(analyser);
-      
-      audioContextRef.current = audioCtx;
-      analyserRef.current = analyser;
-      
-      const recorder = new MediaRecorder(stream);
-      audioChunksRef.current = [];
-      recorder.ondataavailable = (e) => audioChunksRef.current.push(e.data);
-      recorder.onstop = () => {
-         const blob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-         setAudioUrl(URL.createObjectURL(blob)); // Store the audio blob URL
-         stream.getTracks().forEach(t => t.stop());
-      };
-      recorder.start();
-      mediaRecorderRef.current = recorder;
-      
-      const dataArray = new Uint8Array(analyser.frequencyBinCount);
-      const updateVolume = () => {
-        analyser.getByteFrequencyData(dataArray);
-        let sum = 0;
-        for(let i=0; i<dataArray.length; i++) sum += dataArray[i];
-        const avg = sum / dataArray.length;
-        
-        // Simple noise gate behavior (avg < 5 is basically silence)
-        const activeLevel = avg > 5 ? avg : 0;
-        
-        const scale = 1.05 + (activeLevel / 255) * 0.30;
-        micLevel.set(scale);
-        
-        animationFrameRef.current = requestAnimationFrame(updateVolume);
-      };
-      updateVolume();
-      
-      recordIntervalRef.current = setInterval(() => {
-        const now = Date.now();
-        const totalTime = accumulatedTimeRef.current + (now - startTimeRef.current);
-        setRecordedTime(Math.floor(totalTime / 1000));
-        if (totalTime >= 1000) setHasRecordedOnce(true);
-      }, 100);
-
-    } catch (err) {
-      alert("We need to hear your voice to save this memory. Please allow microphone access in your settings.");
-      setPearlState('IDLE');
-    }
-  }, [pearlState, micLevel]);
+    }, 100);
+  }, [pearlState]);
 
   const stopRecording = useCallback(() => {
     setPearlState(prev => {
       if (prev === 'RECORDING') {
         if (recordIntervalRef.current) clearInterval(recordIntervalRef.current);
-        if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
-        
-        if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
-            mediaRecorderRef.current.stop();
-        }
-        if (audioContextRef.current) {
-            audioContextRef.current.close().catch(()=>{});
-        }
-        
-        animate(micLevel, 1, { type: 'spring', stiffness: 300, damping: 20 });
-        if (window.navigator?.vibrate) navigator.vibrate([20]);
-
-        // Restore ambient music
-        if (ambientAudioRef.current) {
-          fadeAudio(ambientAudioRef.current, 1.0, 1000); // Fade back to 100% nicely
-        }
-
         const now = Date.now();
         const sessionTime = now - startTimeRef.current;
         accumulatedTimeRef.current += sessionTime;
@@ -362,14 +232,12 @@ export default function App() {
           setHasRecordedOnce(true);
           return 'REVIEW';
         } else {
-          setRecordedTime(0);
-          accumulatedTimeRef.current = 0;
           return 'IDLE';
         }
       }
       return prev;
     });
-  }, [micLevel]);
+  }, []);
 
   const handlePayment = () => {
     setPaymentStatus('PROCESSING');
@@ -407,7 +275,7 @@ export default function App() {
                <div className="absolute top-1/2 left-0 h-[1px] bg-white transition-all duration-700 ease-out -z-10 shadow-[0_0_10px_#fff]" 
                     style={{ width: `${(((paymentStatus !== 'INITIAL' ? 4 : activeStep) - 1) / 3) * 100}%` }} />
                
-               {['THE SPARK', 'THE FEELING', 'YOUR VOICE', 'THE KEEPSAKE'].map((step, idx) => {
+               {['ORIGIN', 'AURA', 'MESSAGE', 'SEAL'].map((step, idx) => {
                  const displayStep = paymentStatus !== 'INITIAL' ? 4 : activeStep;
                  const isActive = displayStep >= idx + 1;
                  return (
@@ -465,7 +333,7 @@ export default function App() {
                    <>
                      <Camera className="w-6 h-6 mb-4 outline-none font-light text-white/30 group-hover:text-white/50 transition-colors" strokeWidth={1} />
                      <span className="text-[9px] tracking-[0.3em] font-sans uppercase transition-colors text-white/40 group-hover:text-white/60">
-                       Add a visual glimpse
+                       ATTACH PRIMARY VISUALS
                      </span>
                    </>
                 )}
@@ -474,13 +342,13 @@ export default function App() {
 
             {/* Voice Block */}
             <div className="w-full flex flex-col items-center relative group">
-              <motion.h2 animate={{ opacity: isDragging ? 0 : 1 }} className="text-white/60 text-xs tracking-[0.3em] font-sans mb-4">Whisper to the Future</motion.h2>
+              <motion.h2 animate={{ opacity: isDragging ? 0 : 1 }} className="text-white/60 text-xs tracking-[0.3em] font-sans mb-4">VOICING THE VOID</motion.h2>
               
               <motion.div animate={{ opacity: isDragging ? 0 : 1 }} className="text-[9px] text-gray-300 text-center mb-16 tracking-[0.3em] leading-relaxed max-w-[280px]">
                  {pearlState === 'INFUSED' ? (
                    <span className="text-gray-500">AUDIO INFUSED.</span>
                  ) : (
-                   "Record a fleeting feeling. We'll gently soften the music so your voice shines."
+                   "CAPTURE A PERSONAL THOUGHT. IT WILL DUCK THE BACKGROUND MUSIC."
                  )}
               </motion.div>
 
@@ -509,67 +377,58 @@ export default function App() {
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.5, transition: { duration: 0.3, ease: "easeOut" } }}
                     
-                    drag={pearlState === 'RETHINK' ? 'x' : (pearlState === 'IDLE' || pearlState === 'RECORDING') ? false : true}
-                    dragConstraints={
-                      pearlState === 'RETHINK'
-                        ? { left: 0, right: 0 }
-                        : pearlState === 'SEALED'
-                          ? mediaZoneRef
-                          : undefined
-                    }
-                    dragElastic={pearlState === 'RETHINK' ? 0.8 : pearlState === 'SEALED' ? 0.05 : 0.15}
-                    dragMomentum={false}
+                    drag={pearlState === 'SEALED' ? true : pearlState === 'RETHINK' ? 'x' : false}
+                    dragConstraints={pearlState === 'RETHINK' ? { left: 0, right: 0 } : undefined}
+                    dragElastic={pearlState === 'RETHINK' ? 0.8 : undefined}
+                    dragMomentum={pearlState === 'SEALED' ? false : true}
                     
                     whileDrag={{ scale: 1.1, zIndex: 9999 }}
-                    onDragStart={() => {
-                      if (pearlState === 'IDLE' || pearlState === 'RECORDING') return;
-                      setIsDragging(true);
-                      pearlControls.stop();
+                    onDragStart={(e, info) => {
+                       setIsDragging(true);
                     }}
                     
-                    onDrag={() => {
-                      // Pearl is constrained to box in SEALED state — always "near" target
-                      setIsDragNearTarget(pearlState === 'SEALED');
+                    onDrag={(e: any, info: any) => {
+                       if (pearlState === 'SEALED') {
+                           const clientY = e.clientY || (e.touches && e.touches[0] && e.touches[0].clientY);
+                           if (clientY !== undefined) {
+                             const vh = window.innerHeight;
+                             if (clientY < 100) window.scrollBy({ top: -10, behavior: 'auto' });
+                             else if (clientY > vh - 100) window.scrollBy({ top: 10, behavior: 'auto' });
+                           }
+                       }
                     }}
                     
-                    onDragEnd={async (_e: any, info: any) => {
-                      setIsDragging(false);
-                      setIsDragNearTarget(false);
-
-                      // Locked states: ignore drag release.
-                      if (pearlState === 'IDLE' || pearlState === 'RECORDING') {
-                        x.set(0);
-                        y.set(0);
-                        return;
-                      }
-
-                      if (pearlState === 'SEALED') {
-                        // Pearl is constrained to mediaZoneRef, so any drop IS inside the box — infuse immediately.
-                        await pearlControls.start({
-                          opacity: 0,
-                          scale: 0.85,
-                          transition: { duration: 0.18, ease: [0.16, 1, 0.3, 1] }
-                        });
-                        x.set(0);
-                        y.set(0);
-                        setPearlState('INFUSED');
-                        if (window.navigator?.vibrate) navigator.vibrate([100, 50, 100]);
-                        return;
-                      }
-
-                      if (pearlState === 'RETHINK') {
-                        const shouldFlickRight = info.offset.x > 150 || info.velocity.x > 800;
-                        const shouldFlickLeft = info.offset.x < -150 || info.velocity.x < -800;
-
-                        if (shouldFlickRight || shouldFlickLeft) {
-                          const dir = shouldFlickRight ? 1 : -1;
-                          await animate(x, dir * 1000, { duration: 0.28, ease: [0.22, 1, 0.36, 1] });
-                          x.set(0);
-                          y.set(0);
-                          discardPearl(dir);
-                        }
-                        // Otherwise, dragConstraints snaps it back naturally.
-                      }
+                    onDragEnd={async (e: any, info: any) => {
+                       setIsDragging(false);
+                       if (pearlState === 'SEALED') {
+                           const rect = mediaZoneRef.current?.getBoundingClientRect();
+                           if (rect && info.point.x >= rect.left && info.point.x <= rect.right &&
+                               info.point.y >= rect.top && info.point.y <= rect.bottom) {
+                               
+                               // Calculate movement completely unaffected by drag internals
+                               const dx = (rect.left + rect.right) / 2 - info.point.x;
+                               const dy = (rect.top + rect.bottom) / 2 - info.point.y;
+                               
+                               await Promise.all([
+                                   animate(x, x.get() + dx, { duration: 0.4, ease: [0.16, 1, 0.3, 1] }),
+                                   animate(y, y.get() + dy, { duration: 0.4, ease: [0.16, 1, 0.3, 1] })
+                               ]);
+                               
+                               setPearlState('INFUSED');
+                               if (window.navigator && window.navigator.vibrate) navigator.vibrate([100, 50, 100]);
+                           } else {
+                               animate(x, 0, { type: "spring", stiffness: 300, damping: 20 });
+                               animate(y, 0, { type: "spring", stiffness: 300, damping: 20 });
+                           }
+                       } else if (pearlState === 'RETHINK') {
+                           if (info.offset.x > 150 || info.velocity.x > 800) {
+                               await animate(x, window.innerWidth, { duration: 0.4, ease: "easeOut" });
+                               discardPearl(1);
+                           } else if (info.offset.x < -150 || info.velocity.x < -800) {
+                               await animate(x, -window.innerWidth, { duration: 0.4, ease: "easeOut" });
+                               discardPearl(-1);
+                           }
+                       }
                     }}
                     onPointerDown={(e) => {
                        if (pearlState === 'IDLE') startRecording(e);
@@ -583,34 +442,18 @@ export default function App() {
                     className={`relative z-50 w-32 h-32 rounded-full touch-none ${pearlState === 'SEALED' || pearlState === 'RETHINK' ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer'} flex flex-col items-center justify-center transition-all duration-300
                        ${pearlState === 'RECORDING' ? 'scale-105 living-pearl-recording shadow-[0_0_50px_rgba(0,240,255,0.4)]' : 'living-pearl-idle hover:scale-105'}`}
                     style={{
-                      x,
-                      y,
-                      rotate: pearlRotate,
-                      scale: pearlScale,
+                      x: pearlState === 'SEALED' || pearlState === 'RETHINK' ? x : 0,
+                      y: pearlState === 'SEALED' || pearlState === 'RETHINK' ? y : 0,
                       touchAction: 'none',
                       background: `radial-gradient(circle at 35% 35%, rgba(255, 255, 255, 0.9) 0%, rgba(200, 220, 255, 0.4) 15%, ${AURA_COLORS[activeAura]}50 45%, #05000a 85%, #000 100%)`,
-                      boxShadow: isDragNearTarget
-                        ? `inset -15px -15px 30px rgba(0,0,0,0.9), inset 10px 10px 25px rgba(255,255,255,0.7), 0 0 60px ${AURA_COLORS[activeAura]}, 0 0 120px ${AURA_COLORS[activeAura]}60`
-                        : `inset -15px -15px 30px rgba(0,0,0,0.9), inset 10px 10px 25px rgba(255,255,255,0.7), 0 0 ${pearlState === 'RECORDING' ? '40px' : isDragging ? '30px' : '15px'} ${AURA_COLORS[activeAura]}40`,
-                      filter: isDragNearTarget ? 'brightness(1.3) saturate(1.5)' : isDragging ? 'brightness(1.1)' : undefined,
-                      transition: 'box-shadow 0.2s ease, filter 0.2s ease',
+                      boxShadow: `
+                        inset -15px -15px 30px rgba(0,0,0,0.9), 
+                        inset 10px 10px 25px rgba(255,255,255,0.7), 
+                        0 0 ${pearlState === 'RECORDING' ? '40px' : '15px'} ${AURA_COLORS[activeAura]}40
+                      `,
                     }}
                   >
                     <div className="absolute top-[10%] left-[15%] w-[40%] h-[20%] rounded-full bg-gradient-to-b from-white/90 to-transparent blur-[2px] rotate-[-20deg] pointer-events-none mix-blend-overlay" />
-                    {/* Drag aura trail ring */}
-                    {isDragging && (
-                      <div
-                        className="pearl-drag-trail"
-                        style={{ background: `${AURA_COLORS[activeAura]}25`, border: `1px solid ${AURA_COLORS[activeAura]}50` }}
-                      />
-                    )}
-                    {/* Near-target magnetic ring */}
-                    {isDragNearTarget && (
-                      <div
-                        className="absolute inset-[-12px] rounded-full pointer-events-none"
-                        style={{ border: `2px solid ${AURA_COLORS[activeAura]}`, boxShadow: `0 0 20px ${AURA_COLORS[activeAura]}80`, animation: 'target-pulse 0.7s ease-out infinite' }}
-                      />
-                    )}
                   </motion.div>
                 )}
                 </AnimatePresence>
@@ -678,7 +521,7 @@ export default function App() {
 
               <motion.div animate={{ opacity: isDragging ? 0 : 1 }} className="mt-20 text-[8px] tracking-[0.3em] font-sans text-gray-400 uppercase">
                  STATUS / <span className={`font-bold tracking-widest ${pearlState === 'RECORDING' ? 'text-cyan-400 animate-pulse' : pearlState === 'INFUSED' ? 'text-[#8a2be2]' : pearlState === 'SEALED' ? 'text-white' : pearlState === 'REVIEW' ? 'text-cyan-300' : 'text-gray-300'}`}>
-                   {pearlState === 'RECORDING' ? 'RECORDING' : pearlState === 'INFUSED' ? 'INFUSED' : pearlState === 'SEALED' ? 'DRAG TO ORIGIN TO ALCHEMIZE' : pearlState === 'REVIEW' ? 'READY TO SEAL' : pearlState === 'RETHINK' ? 'RETHINK' : 'Ready for you.'}
+                   {pearlState === 'RECORDING' ? 'RECORDING' : pearlState === 'INFUSED' ? 'INFUSED' : pearlState === 'SEALED' ? 'DRAG TO ORIGIN TO ALCHEMIZE' : pearlState === 'REVIEW' ? 'READY TO SEAL' : pearlState === 'RETHINK' ? 'RETHINK' : 'READY'}
                  </span>
               </motion.div>
             </div>
@@ -688,7 +531,7 @@ export default function App() {
           <div ref={auraRef} className="w-full flex flex-col items-center relative mt-32">
             <div className="absolute top-0 right-0 text-white/20 text-[10px] font-mono tracking-widest mb-8">02 / AURA</div>
             <p className="text-gray-300 text-[9px] md:text-[10px] font-sans tracking-[0.3em] uppercase text-center max-w-xs mx-auto leading-relaxed mt-8 mb-10">
-              DETERMINE THow does this memory feel? Set the mood from light to deeply resonant.
+              DETERMINE THE EXSO’S AURA SPECTRUM: FROM LIGHT TO HEAVY RESONANCE
             </p>
             
             <div className="relative w-full max-w-[min(65vw,350px)] aspect-square shrink-0 flex items-center justify-center">
@@ -709,10 +552,10 @@ export default function App() {
             <div className="w-full max-w-[min(65vw,350px)] flex flex-col items-center mt-12">
               <div className="flex w-full justify-between items-center text-[8px] md:text-[9px] tracking-widest font-sans text-white/30 px-2 mt-2">
                  <button className="flex items-center gap-2 hover:text-white transition-colors active:scale-95 group">
-                    <div className="w-1 h-1 rounded-full border border-white/40 group-hover:bg-white transition-colors" /> Hold to Cherish
+                    <div className="w-1 h-1 rounded-full border border-white/40 group-hover:bg-white transition-colors" /> HOLD TO KEEP
                  </button>
                  <button className="flex items-center gap-2 hover:text-white transition-colors active:scale-95 group">
-                    Slide to Let Go <ArrowRight className="w-3 h-3 opacity-50 group-hover:translate-x-1 group-hover:opacity-100 transition-all" />
+                    SLIDE TO ABYSS <ArrowRight className="w-3 h-3 opacity-50 group-hover:translate-x-1 group-hover:opacity-100 transition-all" />
                  </button>
               </div>
             </div>
@@ -724,7 +567,7 @@ export default function App() {
                 onClick={() => setIsGiftShopOpen(true)}
                 className="px-8 py-5 border border-white/10 text-white/40 hover:text-white hover:border-white/30 transition-all tracking-[0.2em] uppercase font-sans text-[9px] flex flex-col items-center gap-1 active:scale-95"
               >
-                 <span>Tuck away a final whisper</span>
+                 <span>STEP 3: TUCK A FINAL THOUGHT</span>
                  <span className="opacity-50 text-[7px] text-white/30 tracking-widest">(Guided Addition)</span>
               </button>
             </div>
@@ -757,7 +600,7 @@ export default function App() {
                    {paymentStatus === 'PROCESSING' ? (
                      <><Loader2 className="w-4 h-4 animate-spin mr-3 opacity-50" /> PROCESSING...</>
                    ) : (
-                     'Seal your keepsake'
+                     'PROCEED TO PAYMENT'
                    )}
                  </motion.button>
               )}
@@ -894,36 +737,16 @@ export default function App() {
                   ))}
 
                   {primaryMedia.length === 0 && pearlState !== 'INFUSED' && (
-                     <div className="py-6 text-center text-[9px] font-sans tracking-widest text-white/20 uppercase">
+                     <div className="py-12 text-center text-[9px] font-sans tracking-widest text-white/30 uppercase">
                         Vault Is Empty
                      </div>
                   )}
-
-                  {/* Always-present Add More Media dropzone */}
-                  <div
-                    {...inventoryAddProps()}
-                    className="group mt-1 border border-dashed border-white/10 hover:border-cyan-400/40 rounded-xl p-4 flex items-center gap-4 cursor-pointer transition-all hover:bg-cyan-400/5 active:scale-[0.98]"
-                  >
-                    <input {...inventoryAddInputProps()} />
-                    <div className="w-10 h-10 rounded-full bg-white/5 border border-white/10 group-hover:border-cyan-400/30 flex items-center justify-center shrink-0 transition-colors">
-                      <Camera className="w-4 h-4 text-white/30 group-hover:text-cyan-400/70 transition-colors" strokeWidth={1.5} />
-                    </div>
-                    <div>
-                      <div className="text-[9px] font-sans tracking-[0.25em] uppercase text-white/40 group-hover:text-white/70 transition-colors mb-0.5">Add Visuals</div>
-                      <div className="text-[8px] font-sans tracking-widest text-white/20 uppercase">Images &amp; Video</div>
-                    </div>
-                    <ArrowRight className="w-3 h-3 text-white/20 group-hover:text-cyan-400/60 group-hover:translate-x-1 transition-all ml-auto shrink-0" />
-                  </div>
                </div>
              </motion.div>
            </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Ambient background music for the experience */}
-      <audio ref={ambientAudioRef} loop autoPlay hidden>
-        <source src="https://assets.mixkit.co/music/preview/mixkit-hazy-after-hours-132.mp3" type="audio/mpeg" />
-      </audio>
     </div>
   );
 }
